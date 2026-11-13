@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Isla Mesa · Reservas San Andrés</title>
+<meta name="theme-color" content="#0a2540">
+<link rel="manifest" id="manifestLink">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --navy:#0a2438;
+  --navy-deep:#071a29;
+  --navy-card:#0f2e46;
+  --turquoise:#2dd4c4;
+  --turquoise-dim:#1a9c90;
+  --coral:#ff7a5c;
+  --gold:#e8b74e;
+  --sand:#f2e9d8;
+  --ink:#e9f2f2;
+  --ink-dim:#9fb8c2;
+  --line:rgba(233,242,242,0.1);
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(45,212,196,0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(255,122,92,0.08), transparent 55%),
+    var(--navy);
+  color:var(--ink);
+  font-family:'Manrope',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+h1,h2,h3,.display{font-family:'Fraunces',serif;}
+
+#app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;}
+
+header.top{
+  padding:22px 20px 18px;
+  position:sticky;top:0;z-index:30;
+  background:linear-gradient(180deg, var(--navy) 70%, transparent);
+  backdrop-filter:blur(6px);
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand svg{width:44px;height:44px;flex:none;}
+.brand .t{line-height:1.05;}
+.brand .t .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--turquoise);font-weight:700;}
+.brand .t h1{font-size:22px;margin:2px 0 0;font-weight:700;color:var(--sand);}
+
+nav.tabs{
+  display:flex;gap:6px;margin-top:16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--line);
+  border-radius:14px;padding:4px;
+}
+nav.tabs button{
+  flex:1;border:none;background:transparent;color:var(--ink-dim);
+  font-family:'Manrope';font-weight:700;font-size:12.5px;padding:10px 4px;border-radius:11px;
+  cursor:pointer;transition:.2s;
+}
+nav.tabs button.active{background:var(--turquoise);color:var(--navy-deep);}
+
+main{flex:1;padding:6px 20px 100px;}
+main.nopad{padding:0;}
+
+.filters{display:flex;gap:8px;overflow-x:auto;padding:10px 0 14px;scrollbar-width:none;}
+.filters::-webkit-scrollbar{display:none;}
+.chip{
+  flex:none;padding:8px 14px;border-radius:100px;font-size:13px;font-weight:600;
+  border:1px solid var(--line);background:rgba(255,255,255,0.03);color:var(--ink-dim);
+  cursor:pointer;white-space:nowrap;transition:.15s;
+}
+.chip.active{background:var(--gold);border-color:var(--gold);color:var(--navy-deep);}
+
+.card{
+  background:var(--navy-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;margin-bottom:14px;
+  cursor:pointer;transition:.2s;
+  position:relative;
+}
+.card:active{transform:scale(0.98);}
+.card .media{height:120px;position:relative;overflow:hidden;}
+.card .media svg{width:100%;height:100%;}
+.card .price-tag{
+  position:absolute;top:10px;right:10px;background:rgba(10,36,56,0.75);
+  border:1px solid var(--gold);color:var(--gold);font-weight:800;font-size:12px;
+  padding:3px 10px;border-radius:100px;backdrop-filter:blur(4px);
+}
+.card .badge-top{
+  position:absolute;top:10px;left:10px;background:rgba(45,212,196,0.9);color:var(--navy-deep);
+  font-weight:800;font-size:10.5px;padding:3px 9px;border-radius:100px;letter-spacing:.03em;
+}
+.card .body{padding:14px 16px 16px;}
+.card .row1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.card h3{font-size:18px;margin:0;color:var(--sand);font-weight:700;}
+.card .rating{display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex:none;}
+.card .rating .stars{color:var(--gold);font-weight:800;font-size:13px;}
+.card .rating .cnt{color:var(--ink-dim);font-size:10.5px;}
+.card .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;background:rgba(45,212,196,0.12);color:var(--turquoise);}
+.tag.zone{background:rgba(255,122,92,0.12);color:var(--coral);}
+.card p.desc{color:var(--ink-dim);font-size:13px;margin:10px 0 0;line-height:1.4;}
+.card .addr{display:flex;align-items:center;gap:5px;margin-top:8px;color:var(--ink-dim);font-size:11.5px;}
+
+.empty{text-align:center;padding:60px 20px;color:var(--ink-dim);}
+.empty svg{width:80px;height:80px;margin-bottom:14px;opacity:.7;}
+.empty h3{color:var(--sand);margin:0 0 6px;}
+
+.overlay{
+  position:fixed;inset:0;background:rgba(4,14,22,0.7);backdrop-filter:blur(3px);
+  z-index:100;display:none;align-items:flex-end;justify-content:center;
+}
+.overlay.open{display:flex;}
+.sheet{
+  width:100%;max-width:520px;max-height:92vh;overflow-y:auto;
+  background:var(--navy-deep);
+  border-radius:24px 24px 0 0;
+  border-top:1px solid var(--line);
+  animation:slideUp .28s ease-out;
+  padding-bottom:24px;
+}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.sheet .handle{width:40px;height:4px;background:var(--line);border-radius:10px;margin:10px auto 0;}
+.sheet .media-lg{height:170px;margin:14px 16px 0;border-radius:16px;overflow:hidden;}
+.sheet .media-lg svg{width:100%;height:100%;}
+.sheet .content{padding:16px 20px 0;}
+.sheet h2{font-size:24px;color:var(--sand);margin:0 0 4px;}
+.sheet .sub{color:var(--ink-dim);font-size:13px;margin-bottom:14px;}
+.sheet .stat-row{display:flex;gap:10px;margin-bottom:16px;}
+.stat-box{flex:1;background:var(--navy-card);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;}
+.stat-box .v{font-family:'Fraunces';font-size:16px;color:var(--gold);font-weight:700;}
+.stat-box .l{font-size:9.5px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.sheet p.about{font-size:14px;line-height:1.55;color:var(--ink);opacity:.9;}
+.close-x{position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.08);border:none;color:var(--sand);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;z-index:5;}
+
+.addr-box{
+  display:flex;align-items:flex-start;gap:10px;background:var(--navy-card);border:1px solid var(--line);
+  border-radius:14px;padding:12px 14px;margin-bottom:14px;
+}
+.addr-box svg{flex:none;width:18px;height:18px;margin-top:1px;}
+.addr-box .txt{font-size:12.5px;color:var(--ink-dim);line-height:1.5;}
+.addr-box .txt b{color:var(--sand);font-size:13.5px;display:block;margin-bottom:2px;}
+
+.mini-map{height:150px;border-radius:14px;overflow:hidden;margin-bottom:14px;border:1px solid var(--line);}
+
+.btn-row{display:flex;gap:10px;margin-top:6px;}
+.btn-primary{
+  display:block;width:100%;text-align:center;padding:15px;border-radius:14px;
+  background:var(--turquoise);color:var(--navy-deep);font-weight:800;font-size:15px;
+  border:none;cursor:pointer;margin-top:6px;font-family:'Manrope';
+}
+.btn-primary:active{transform:scale(0.98);}
+.btn-secondary{
+  flex:1;text-align:center;padding:13px;border-radius:14px;background:rgba(255,255,255,0.06);
+  color:var(--sand);font-weight:700;font-size:13.5px;border:1px solid var(--line);cursor:pointer;
+  font-family:'Manrope';text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:12px;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.form-row{display:flex;gap:10px;}
+.form-row .form-group{flex:1;}
+input[type=date],input[type=time],input[type=text],input[type=tel],input[type=number],select,textarea{
+  width:100%;background:var(--navy-card);border:1px solid var(--line);color:var(--ink);
+  padding:12px 14px;border-radius:12px;font-family:'Manrope';font-size:14px;font-weight:600;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--turquoise);border-color:var(--turquoise);}
+textarea{resize:none;height:70px;}
+.stepper{display:flex;align-items:center;gap:14px;background:var(--navy-card);border:1px solid var(--line);border-radius:12px;padding:8px 14px;}
+.stepper button{width:34px;height:34px;border-radius:10px;border:none;background:rgba(45,212,196,0.15);color:var(--turquoise);font-size:18px;font-weight:800;cursor:pointer;}
+.stepper .n{flex:1;text-align:center;font-family:'Fraunces';font-size:18px;color:var(--sand);font-weight:700;}
+.notice{background:rgba(232,183,78,0.1);border:1px solid rgba(232,183,78,0.3);color:var(--gold);font-size:12.5px;padding:10px 12px;border-radius:12px;margin-bottom:14px;line-height:1.4;}
+
+.ticket{
+  position:relative;background:var(--navy-card);border:1px dashed var(--turquoise-dim);
+  border-radius:16px;padding:20px;margin:18px 20px 0;
+  background-image:
+    radial-gradient(circle at 0 50%, var(--navy-deep) 9px, transparent 10px),
+    radial-gradient(circle at 100% 50%, var(--navy-deep) 9px, transparent 10px);
+}
+.ticket .perf{border-top:2px dotted var(--line);margin:14px 0;}
+.ticket .tt{font-family:'Fraunces';font-size:20px;color:var(--sand);font-weight:700;margin:0 0 2px;}
+.ticket .zz{color:var(--turquoise);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.ticket .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;}
+.ticket .grid div .l{font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;}
+.ticket .grid div .v{font-family:'Fraunces';font-size:16px;color:var(--sand);font-weight:600;margin-top:2px;}
+.ticket .status{display:inline-block;margin-top:12px;padding:5px 12px;border-radius:100px;font-size:11px;font-weight:800;}
+.status.enviada{background:rgba(232,183,78,0.15);color:var(--gold);}
+.status.confirmada{background:rgba(45,212,196,0.15);color:var(--turquoise);}
+.status.cancelada{background:rgba(255,122,92,0.15);color:var(--coral);}
+
+.res-card{background:var(--navy-card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;}
+.res-card .top{display:flex;justify-content:space-between;align-items:flex-start;}
+.res-card h4{margin:0 0 3px;font-size:16px;color:var(--sand);}
+.res-card .when{font-size:13px;color:var(--turquoise);font-weight:700;}
+.res-card .details{font-size:12.5px;color:var(--ink-dim);margin-top:8px;line-height:1.6;}
+.res-actions{display:flex;gap:8px;margin-top:12px;}
+.res-actions button{
+  flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:transparent;
+  color:var(--ink-dim);font-weight:700;font-size:12.5px;cursor:pointer;
+}
+.res-actions button.cancel{color:var(--coral);border-color:rgba(255,122,92,0.3);}
+.res-actions button.wa{color:var(--turquoise);border-color:rgba(45,212,196,0.3);}
+
+/* Map view */
+#mapView{position:relative;height:calc(100vh - 168px);}
+#leafletMap{width:100%;height:100%;}
+.map-legend{
+  position:absolute;bottom:14px;left:14px;right:14px;background:rgba(10,36,56,0.9);
+  border:1px solid var(--line);border-radius:14px;padding:10px 14px;backdrop-filter:blur(6px);
+  font-size:12px;color:var(--ink-dim);display:flex;align-items:center;gap:8px;z-index:400;
+}
+.leaflet-popup-content-wrapper{background:var(--navy-card);color:var(--ink);border-radius:12px;}
+.leaflet-popup-tip{background:var(--navy-card);}
+.popup-card{min-width:170px;}
+.popup-card b{color:var(--sand);font-family:'Fraunces';font-size:14px;}
+.popup-card .pr{color:var(--gold);font-size:12px;font-weight:700;margin:3px 0;}
+.popup-card button{
+  margin-top:6px;width:100%;padding:7px;border:none;border-radius:8px;background:var(--turquoise);
+  color:var(--navy-deep);font-weight:800;font-size:11.5px;cursor:pointer;
+}
+.pin-marker{
+  width:30px;height:30px;border-radius:50% 50% 50% 0;background:var(--coral);transform:rotate(-45deg);
+  border:2px solid var(--navy-deep);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 8px rgba(0,0,0,0.4);
+}
+.pin-marker span{transform:rotate(45deg);font-size:13px;}
+
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--sand);color:var(--navy-deep);padding:12px 20px;border-radius:100px;
+  font-weight:700;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  opacity:0;pointer-events:none;transition:.25s;z-index:200;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.install-banner{
+  position:fixed;bottom:0;left:0;right:0;background:var(--navy-card);border-top:1px solid var(--line);
+  padding:12px 20px;display:none;align-items:center;justify-content:space-between;gap:12px;z-index:150;
+  max-width:520px;margin:0 auto;
+}
+.install-banner.show{display:flex;}
+.install-banner span{font-size:13px;color:var(--ink);font-weight:600;}
+.install-banner button{background:var(--turquoise);border:none;color:var(--navy-deep);font-weight:800;padding:8px 14px;border-radius:10px;font-size:12.5px;}
+
+.leaflet-container{background:var(--navy-deep) !important;font-family:'Manrope';}
+
+.source-badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  color:var(--gold);background:rgba(232,183,78,0.12);padding:4px 10px;border-radius:100px;margin-bottom:12px;
+}
+
+.brand-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.premium-btn{
+  flex:none;background:rgba(232,183,78,0.14);border:1px solid rgba(232,183,78,0.4);color:var(--gold);
+  font-weight:800;font-size:11px;padding:8px 12px;border-radius:100px;cursor:pointer;white-space:nowrap;font-family:'Manrope';
+}
+.premium-badge{
+  flex:none;background:rgba(45,212,196,0.14);border:1px solid rgba(45,212,196,0.4);color:var(--turquoise);
+  font-weight:800;font-size:11px;padding:8px 12px;border-radius:100px;cursor:pointer;white-space:nowrap;font-family:'Manrope';
+}
+.fav-star{
+  position:absolute;top:46px;right:10px;width:28px;height:28px;border-radius:50%;
+  background:rgba(10,36,56,0.78);border:1px solid var(--gold);color:var(--gold);
+  font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;
+}
+.chip.fav-chip{background:rgba(232,183,78,0.1);}
+.chip.fav-chip.active{background:var(--gold);color:var(--navy-deep);}
+
+::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <div class="brand-row">
+      <div class="brand">
+        <svg id="brandLogo" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="23" fill="#0f2e46" stroke="#2dd4c4" stroke-width="1.5"/>
+          <path d="M10 30c3-6 7-9 14-9s11 3 14 9" stroke="#2dd4c4" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M24 12c-2 4-2 7 0 9 2-2 2-5 0-9z" fill="#e8b74e"/>
+          <circle cx="24" cy="24" r="3.4" fill="#ff7a5c"/>
+        </svg>
+        <div class="t">
+          <div class="eyebrow">San Andrés Isla</div>
+          <h1>Isla Mesa</h1>
+        </div>
+      </div>
+      <div id="premiumSlot"></div>
+    </div>
+    <nav class="tabs">
+      <button class="active" data-tab="explorar">Explorar</button>
+      <button data-tab="mapa">Mapa</button>
+      <button data-tab="reservas">Mis reservas</button>
+    </nav>
+  </header>
+
+  <main id="mainContent">
+    <section id="view-explorar">
+      <div class="filters" id="zoneFilters"></div>
+      <div class="filters" id="cuisineFilters" style="padding-top:0;"></div>
+      <div id="list"></div>
+    </section>
+
+    <section id="view-mapa" style="display:none;">
+      <div id="mapView">
+        <div id="leafletMap"></div>
+        <div class="map-legend">📍 Toca un punto para ver el restaurante y reservar</div>
+      </div>
+    </section>
+
+    <section id="view-reservas" style="display:none;">
+      <div id="resList"></div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="sheet" id="sheet"></div>
+  </div>
+
+  <div id="toast"></div>
+  <div class="install-banner" id="installBanner">
+    <span>Instala Isla Mesa para reservar sin conexión</span>
+    <button id="installBtn">Instalar</button>
+  </div>
+</div>
+
+<script>
+/* ================= DATA =================
+   Restaurantes reales de San Andrés Isla con buena puntuación y volumen de
+   reseñas en plataformas de viajes (Google/TripAdvisor). Booking.com no suele
+   listar restaurantes independientes (solo hospedaje), por eso se usó la
+   fuente de reseñas de viajeros más completa disponible para cada uno.
+   Edita este arreglo para reemplazar o ajustar cualquier dato. */
+const RESTAURANTS = [
+  {
+    id:'r1', name:'La Regatta', zone:'Centro', cuisine:'Mariscos',
+    price:'$$$', rating:4.6, reviews:10680, phone:null,
+    lat:12.5805203, lng:-81.6915755,
+    address:'Cra. 1 #3 - 121, San Andrés',
+    hours:'12:00 m. – 3:00 p.m. y 6:30 – 10:30 p.m. (cerrado domingo)',
+    specialty:'Orzo de langosta', svg:'langosta', top:true,
+    desc:'El restaurante mejor valorado de la isla: mesas sobre el agua de la bahía, decoración muy cuidada (hasta con tiburones nadando bajo las mesas) y una carta de mariscos con toques internacionales. Alta demanda: se recomienda reservar con semanas de anticipación en temporada alta.'
+  },
+  {
+    id:'r2', name:'Namasté Beach Club', zone:'San Luis', cuisine:'Saludable',
+    price:'$$', rating:4.7, reviews:725, phone:null,
+    lat:12.5436, lng:-81.7056922,
+    address:'Playa Rocky Cay, Bahía de Cocoplum, San Andrés',
+    hours:'10:30 a.m. – 5:30 p.m.',
+    specialty:'Ceviche frente al mar', svg:'cebiche', top:true,
+    desc:'Club de playa tranquilo junto a Rocky Cay, lejos del bullicio del centro. Comida fresca y saludable, ambiente relajado y atención muy personalizada; ideal para pasar el día completo en la playa.'
+  },
+  {
+    id:'r3', name:'Capitán Mandy', zone:'Centro', cuisine:'Mariscos',
+    price:'$$', rating:4.5, reviews:2112, phone:null,
+    lat:12.5808472, lng:-81.6984828,
+    address:'Av. Providencia #4b-2 a, San Andrés',
+    hours:'12:00 m. – 5:00 p.m.',
+    specialty:'Pescado entero frito y pulpo', svg:'pescado', top:true,
+    desc:'A pocos minutos a pie de la zona turística. Pescado entero, pulpo muy tierno y porciones generosas a precios justos; solo abre para el almuerzo y es un clásico entre viajeros.'
+  },
+  {
+    id:'r4', name:'Gourmet Shop Assho', zone:'Centro', cuisine:'Internacional',
+    price:'$$', rating:4.5, reviews:1099, phone:null,
+    lat:12.5814559, lng:-81.6927569,
+    address:'San Andrés, zona centro',
+    hours:'12:00 m. – 3:00 p.m. y 6:00 – 10:00 p.m. (cerrado domingo)',
+    specialty:'Filete en leche de coco', svg:'pescado', top:true,
+    desc:'Todo se hace desde cero: sopa de pescado con leche de coco, jugos naturales de coco y una carta que combina pasta con sabores isleños. Ambiente relajado y muy recomendado por viajeros frecuentes.'
+  },
+  {
+    id:'r5', name:'El Peruano', zone:'Centro', cuisine:'Peruana',
+    price:'$$', rating:4.5, reviews:4608, phone:'573105513776',
+    lat:12.585582, lng:-81.6956796,
+    address:'Cl. 3 #5-12, San Andrés',
+    hours:'12:00 m. – 11:00 p.m.',
+    specialty:'Ceviche mixto y empanadas de pescado', svg:'cebiche', top:true,
+    desc:'Cocina peruana con toque isleño: ceviches, arroz chaufa y una trilogía de mariscos muy pedida. Servicio atento y buena relación calidad-precio en el corazón del centro.'
+  },
+  {
+    id:'r6', name:'Aqua Beach Club', zone:'San Luis', cuisine:'Caribeña',
+    price:'$$', rating:4.4, reviews:1875, phone:null,
+    lat:12.5434388, lng:-81.7049102,
+    address:'Bahía Cocoplum, cerca de Rocky Cay, San Andrés',
+    hours:'10:30 a.m. – 6:00 p.m.',
+    specialty:'Pulpo a la parrilla con chimichurri', svg:'cangrejo',
+    desc:'Club de playa frente a Rocky Cay, arena blanca y mar tranquilo con buen snorkel. Ceviche y pulpo a la parrilla son lo más pedido; llega temprano para la mejor ubicación.'
+  },
+  {
+    id:'r7', name:'Mahi Mahi', zone:'Centro', cuisine:'Mariscos',
+    price:'$$', rating:4.1, reviews:702, phone:'573241000751',
+    lat:12.5845096, lng:-81.6927563,
+    address:'Cra. 4 #2-37, San Andrés',
+    hours:'12:00 m. – 3:00 p.m. y 7:00 – 11:00 p.m. (sábado solo cena)',
+    specialty:'Trío de mariscos y paella', svg:'pescado',
+    desc:'Tres restaurantes bajo un mismo techo (italiano, oriental e internacional) con vista al mar. Buena variedad de carta y ambiente animado, ideal si el grupo tiene gustos distintos.'
+  },
+  {
+    id:'r8', name:'Sea Watch Caffe', zone:'Centro', cuisine:'Italiana',
+    price:'$$', rating:4.1, reviews:1903, phone:'573241000751',
+    lat:12.5845822, lng:-81.6928445,
+    address:'Av. Colombia #3-59, San Andrés',
+    hours:'7:00 a.m. – 11:00 p.m.',
+    specialty:'Pizza de horno y desayunos', svg:'pasta',
+    desc:'Cafetería y pizzería justo frente a la playa del centro, con mucha vida desde el desayuno hasta la noche. Buena opción para un plato rápido sin alejarse del malecón.'
+  },
+  {
+    id:'r9', name:'Humberto Iregui Cocina Bar', zone:'Zona Norte', cuisine:'Internacional',
+    price:'$$', rating:4.3, reviews:44, phone:'573157701861',
+    lat:12.5928023, lng:-81.7034008,
+    address:'Cl. 1 #17-134, San Andrés',
+    hours:'Solo con reserva previa',
+    specialty:'Menú show-cooking a la vista', svg:'rondon', top:true,
+    desc:'Restaurante familiar pequeño donde Humberto y su esposa preparan cada plato desde cero frente a los comensales, con presentación de nivel gourmet. Una joya escondida junto a un supermercado del norte de la isla; conviene ubicarlo bien antes de ir.'
+  },
+];
+
+const ZONES = ['Todas','Centro','San Luis','Zona Norte'];
+const CUISINES = ['Todas','Mariscos','Internacional','Peruana','Italiana','Caribeña','Saludable'];
+
+let state = { zone:'Todas', cuisine:'Todas', showFavs:false };
+let leafletMapInstance = null;
+let markersById = {};
+
+/* ================= SVG ILLUSTRATIONS ================= */
+function foodSVG(kind){
+  const bg = `<rect width="400" height="240" fill="#0f2e46"/>
+    <circle cx="340" cy="30" r="60" fill="#e8b74e" opacity="0.12"/>
+    <circle cx="20" cy="210" r="90" fill="#2dd4c4" opacity="0.08"/>`;
+  const plates = {
+    rondon: `<ellipse cx="200" cy="150" rx="110" ry="34" fill="#1a3a52"/>
+      <ellipse cx="200" cy="142" rx="95" ry="26" fill="#0a2438"/>
+      <circle cx="170" cy="135" r="16" fill="#e8b74e"/>
+      <circle cx="205" cy="145" r="14" fill="#ff7a5c"/>
+      <circle cx="235" cy="132" r="12" fill="#f2e9d8"/>
+      <rect x="150" y="128" width="10" height="24" rx="3" fill="#2dd4c4" transform="rotate(20 155 140)"/>`,
+    pescado: `<ellipse cx="200" cy="150" rx="105" ry="30" fill="#1a3a52"/>
+      <path d="M140 145 q40 -30 100 0 q-40 26 -100 0z" fill="#e8b74e"/>
+      <circle cx="152" cy="142" r="3" fill="#0a2438"/>
+      <path d="M240 145 l25 -14 l0 28z" fill="#e8b74e"/>
+      <circle cx="150" cy="175" r="14" fill="#f2e9d8"/>
+      <circle cx="185" cy="178" r="14" fill="#f2e9d8"/>`,
+    caracol: `<ellipse cx="200" cy="150" rx="105" ry="30" fill="#1a3a52"/>
+      <path d="M170 150 a30 30 0 1 1 60 0 a20 20 0 1 1 -40 0 a10 10 0 1 1 20 0" fill="#ff7a5c" stroke="#0a2438" stroke-width="2"/>
+      <ellipse cx="150" cy="168" rx="18" ry="8" fill="#f2e9d8"/>`,
+    langosta: `<ellipse cx="200" cy="155" rx="110" ry="28" fill="#1a3a52"/>
+      <path d="M150 150 q50 -40 100 0 q-10 20 -50 20 q-40 0 -50 -20z" fill="#ff7a5c"/>
+      <path d="M160 150 l-20 -14 M240 150 l20 -14" stroke="#ff7a5c" stroke-width="6" stroke-linecap="round"/>`,
+    pasta: `<ellipse cx="200" cy="150" rx="105" ry="30" fill="#1a3a52"/>
+      <path d="M155 140 q10 -18 20 0 q10 -18 20 0 q10 -18 20 0 q10 -18 20 0 q10 -18 20 0" stroke="#e8b74e" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <circle cx="175" cy="150" r="8" fill="#ff7a5c"/>
+      <circle cx="220" cy="152" r="8" fill="#ff7a5c"/>`,
+    cangrejo: `<ellipse cx="200" cy="150" rx="60" ry="40" fill="#ff7a5c"/>
+      <circle cx="160" cy="130" r="14" fill="#ff7a5c"/><circle cx="240" cy="130" r="14" fill="#ff7a5c"/>
+      <path d="M150 150 l-25 10 M250 150 l25 10 M150 165 l-25 15 M250 165 l25 15" stroke="#ff7a5c" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="180" cy="140" r="4" fill="#0a2438"/><circle cx="220" cy="140" r="4" fill="#0a2438"/>`,
+    cebiche: `<ellipse cx="200" cy="155" rx="100" ry="34" fill="#1a3a52"/>
+      <ellipse cx="200" cy="145" rx="80" ry="22" fill="#f2e9d8" opacity="0.9"/>
+      <circle cx="170" cy="140" r="7" fill="#ff7a5c"/><circle cx="200" cy="145" r="7" fill="#ff7a5c"/><circle cx="230" cy="138" r="7" fill="#ff7a5c"/>
+      <circle cx="185" cy="150" r="5" fill="#2dd4c4"/>`
+  };
+  return `<svg viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">${bg}${plates[kind]||plates.rondon}</svg>`;
+}
+
+function emptySVG(){
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="58" fill="none" stroke="#2dd4c4" stroke-width="2" opacity="0.4"/>
+    <path d="M35 70c6-14 15-20 25-20s19 6 25 20" stroke="#2dd4c4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="60" cy="42" r="8" fill="#e8b74e"/>
+  </svg>`;
+}
+function pinSVG(){
+  return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 12 2.5a7 7 0 0 1 7 7C19 14.8 12 21 12 21z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.4" fill="currentColor"/></svg>`;
+}
+
+/* ================= RENDER LIST ================= */
+function renderFilters(){
+  const zf = document.getElementById('zoneFilters');
+  zf.innerHTML = ZONES.map(z=>`<button class="chip ${state.zone===z?'active':''}" data-zone="${z}">${z}</button>`).join('')
+    + (isPremiumActive() ? `<button class="chip fav-chip ${state.showFavs?'active':''}" id="favChip">⭐ Favoritos</button>` : '');
+  zf.querySelectorAll('.chip[data-zone]').forEach(b=>b.onclick=()=>{state.zone=b.dataset.zone;renderFilters();renderList();});
+  const favChip = document.getElementById('favChip');
+  if(favChip) favChip.onclick = ()=>{ state.showFavs = !state.showFavs; renderFilters(); renderList(); };
+
+  const cf = document.getElementById('cuisineFilters');
+  cf.innerHTML = CUISINES.map(c=>`<button class="chip ${state.cuisine===c?'active':''}" data-cuisine="${c}">${c}</button>`).join('');
+  cf.querySelectorAll('button').forEach(b=>b.onclick=()=>{state.cuisine=b.dataset.cuisine;renderFilters();renderList();});
+}
+
+function filtered(){
+  return RESTAURANTS.filter(r=>
+    (state.zone==='Todas'||r.zone===state.zone) &&
+    (state.cuisine==='Todas'||r.cuisine===state.cuisine) &&
+    (!state.showFavs || isFavorite(r.id))
+  );
+}
+
+function renderList(){
+  const list = document.getElementById('list');
+  const data = filtered();
+  if(!data.length){
+    list.innerHTML = `<div class="empty">${emptySVG()}<h3>Nada por aquí</h3><p>Prueba con otra zona o tipo de cocina.</p></div>`;
+    return;
+  }
+  list.innerHTML = data.map(r=>`
+    <div class="card" data-id="${r.id}">
+      <div class="media">${foodSVG(r.svg)}<div class="price-tag">${r.price}</div>${r.top?'<div class="badge-top">★ TOP ISLA</div>':''}${isPremiumActive()?`<button class="fav-star" data-fav="${r.id}">${isFavorite(r.id)?'★':'☆'}</button>`:''}</div>
+      <div class="body">
+        <div class="row1">
+          <h3>${r.name}</h3>
+          <div class="rating"><div class="stars">★ ${r.rating}</div><div class="cnt">${r.reviews.toLocaleString('es-CO')} reseñas</div></div>
+        </div>
+        <div class="meta">
+          <span class="tag zone">${r.zone}</span>
+          <span class="tag">${r.cuisine}</span>
+        </div>
+        <p class="desc">${r.desc}</p>
+        <div class="addr">📍 ${r.address}</div>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.card').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
+  list.querySelectorAll('.fav-star').forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    toggleFavorite(b.dataset.fav);
+    renderList();
+  });
+}
+
+/* ================= MAP VIEW ================= */
+function initMap(){
+  if(leafletMapInstance) return;
+  leafletMapInstance = L.map('leafletMap', {zoomControl:true}).setView([12.556, -81.705], 12.3);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
+  }).addTo(leafletMapInstance);
+
+  RESTAURANTS.forEach(r=>{
+    const icon = L.divIcon({
+      className:'', html:`<div class="pin-marker"><span>🍽️</span></div>`,
+      iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-28]
+    });
+    const marker = L.marker([r.lat, r.lng], {icon}).addTo(leafletMapInstance);
+    marker.bindPopup(`
+      <div class="popup-card">
+        <b>${r.name}</b>
+        <div class="pr">★ ${r.rating} · ${r.price}</div>
+        <div style="font-size:11.5px;color:#9fb8c2;">${r.zone} · ${r.cuisine}</div>
+        <button onclick="window.__openFromMap('${r.id}')">Ver y reservar</button>
+      </div>
+    `);
+    markersById[r.id] = marker;
+  });
+}
+window.__openFromMap = function(id){ closeAllPopups(); openDetail(id); };
+function closeAllPopups(){ if(leafletMapInstance) leafletMapInstance.closePopup(); }
+
+/* ================= DETAIL SHEET ================= */
+function openDetail(id){
+  const r = RESTAURANTS.find(x=>x.id===id);
+  const sheet = document.getElementById('sheet');
+  const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}`;
+  sheet.innerHTML = `
+    <button class="close-x" id="closeSheet">✕</button>
+    <div class="handle"></div>
+    <div class="media-lg">${foodSVG(r.svg)}</div>
+    <div class="content">
+      <h2>${r.name}</h2>
+      <div class="sub">${r.zone} · ${r.cuisine} · ${r.price}</div>
+      <div class="stat-row">
+        <div class="stat-box"><div class="v">★ ${r.rating}</div><div class="l">${r.reviews.toLocaleString('es-CO')} reseñas</div></div>
+        <div class="stat-box"><div class="v">${r.specialty}</div><div class="l">Especialidad</div></div>
+        <div class="stat-box"><div class="v">${r.hours.split(/[–(]/)[0].trim()}</div><div class="l">Abre desde</div></div>
+      </div>
+      <p class="about">${r.desc}</p>
+
+      <div class="addr-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2dd4c4" stroke-width="1.6"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 12 2.5a7 7 0 0 1 7 7C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4" fill="#2dd4c4"/></svg>
+        <div class="txt"><b>${r.address}</b>Horario: ${r.hours}</div>
+      </div>
+
+      <div class="mini-map" id="miniMap_${r.id}"></div>
+
+      <div class="btn-row">
+        <a class="btn-secondary" href="${dirUrl}" target="_blank" rel="noopener">🧭 Cómo llegar</a>
+        ${r.phone ? `<a class="btn-secondary" href="https://wa.me/${r.phone}" target="_blank" rel="noopener">💬 Escribir</a>` : ''}
+      </div>
+
+      <button class="btn-primary" id="reserveBtn">${isPremiumActive() ? 'Reservar mesa' : '🔒 Reservar mesa (requiere Pase Isla)'}</button>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('closeSheet').onclick = closeSheet;
+  document.getElementById('reserveBtn').onclick = ()=>{
+    if(isPremiumActive()) openReserveForm(r);
+    else openPremiumModal(r);
+  };
+
+  setTimeout(()=>{
+    const mm = L.map(`miniMap_${r.id}`, {zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false}).setView([r.lat, r.lng], 15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(mm);
+    L.marker([r.lat, r.lng], {icon:L.divIcon({className:'', html:'<div class="pin-marker"><span>🍽️</span></div>', iconSize:[30,30], iconAnchor:[15,30]})}).addTo(mm);
+  }, 60);
+}
+
+function closeSheet(){ document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeSheet(); });
+
+/* ================= RESERVE FORM ================= */
+function openReserveForm(r){
+  if(!isPremiumActive()){ openPremiumModal(r); return; }
+  const sheet = document.getElementById('sheet');
+  const today = new Date().toISOString().split('T')[0];
+  sheet.innerHTML = `
+    <button class="close-x" id="closeSheet">✕</button>
+    <div class="handle"></div>
+    <div class="content">
+      <h2>Reservar en ${r.name}</h2>
+      <div class="sub">Completa los datos y elige cómo confirmar</div>
+      ${!r.phone ? `<div class="notice">Este restaurante no tiene WhatsApp público registrado. Tu reserva se guardará en la app; te recomendamos también llamar directamente para confirmar.</div>` : ''}
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="f_date" min="${today}" value="${today}">
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input type="time" id="f_time" value="19:00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Personas</label>
+        <div class="stepper">
+          <button type="button" id="minus">−</button>
+          <div class="n" id="guestN">2</div>
+          <button type="button" id="plus">+</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Tu nombre</label>
+        <input type="text" id="f_name" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Tu WhatsApp</label>
+        <input type="tel" id="f_phone" placeholder="Ej: 3001234567">
+      </div>
+      <div class="form-group">
+        <label>Nota (opcional)</label>
+        <textarea id="f_notes" placeholder="Alergias, ocasión especial, mesa junto a la ventana..."></textarea>
+      </div>
+
+      ${isPremiumActive() ? `
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="f_priority" checked style="width:auto;">
+        <label style="margin:0;text-transform:none;font-weight:600;color:var(--sand);font-size:13px;">⭐ Solicitar atención prioritaria (Pase Isla)</label>
+      </div>` : ''}
+
+      <button class="btn-primary" id="confirmBoth">${r.phone ? 'Reservar (WhatsApp + guardar en la app)' : 'Guardar reserva en la app'}</button>
+    </div>
+  `;
+  document.getElementById('closeSheet').onclick = closeSheet;
+
+  let guests = 2;
+  const guestEl = document.getElementById('guestN');
+  document.getElementById('minus').onclick = ()=>{ if(guests>1){guests--; guestEl.textContent=guests;} };
+  document.getElementById('plus').onclick = ()=>{ if(guests<20){guests++; guestEl.textContent=guests;} };
+
+  document.getElementById('confirmBoth').onclick = ()=>{
+    const date = document.getElementById('f_date').value;
+    const time = document.getElementById('f_time').value;
+    const name = document.getElementById('f_name').value.trim();
+    const phone = document.getElementById('f_phone').value.trim();
+    const notes = document.getElementById('f_notes').value.trim();
+    const priorityEl = document.getElementById('f_priority');
+    const priority = priorityEl ? priorityEl.checked : false;
+
+    if(!date||!time||!name||!phone){
+      showToast('Completa fecha, hora, nombre y WhatsApp');
+      return;
+    }
+
+    const reservation = {
+      id:'res_'+Date.now(),
+      restaurantId:r.id, restaurantName:r.name, restaurantPhone:r.phone,
+      date, time, guests, name, phone, notes, priority,
+      status:'enviada', createdAt:Date.now()
+    };
+    saveReservation(reservation);
+
+    if(r.phone){
+      const msg = (priority?`⭐ Cliente Pase Isla (solicita prioridad)%0A`:'') +
+        `Hola ${r.name}! Quisiera reservar mesa:%0A` +
+        `📅 Fecha: ${date}%0A🕐 Hora: ${time}%0A👥 Personas: ${guests}%0A🙋 Nombre: ${name}%0A📱 Tel: ${phone}` +
+        (notes?`%0A📝 Nota: ${notes}`:'') ;
+      window.open(`https://wa.me/${r.phone}?text=${msg}`,'_blank');
+      showToast('Reserva guardada y enviada por WhatsApp');
+    } else {
+      showToast('Reserva guardada en la app');
+    }
+    showTicket(reservation);
+  };
+}
+
+function showTicket(res){
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <button class="close-x" id="closeSheet">✕</button>
+    <div class="handle"></div>
+    <div class="ticket">
+      <div class="zz">Isla Mesa · Comprobante</div>
+      <div class="tt">${res.restaurantName}</div>
+      <div class="grid">
+        <div><div class="l">Fecha</div><div class="v">${formatDate(res.date)}</div></div>
+        <div><div class="l">Hora</div><div class="v">${res.time}</div></div>
+        <div><div class="l">Personas</div><div class="v">${res.guests}</div></div>
+        <div><div class="l">A nombre de</div><div class="v">${res.name}</div></div>
+      </div>
+      <div class="perf"></div>
+      <span class="status enviada">${res.restaurantPhone ? 'Enviada al restaurante' : 'Guardada en la app'}</span>
+    </div>
+    <div class="content">
+      <button class="btn-primary" id="goToRes">Ver mis reservas</button>
+    </div>
+  `;
+  document.getElementById('closeSheet').onclick = closeSheet;
+  document.getElementById('goToRes').onclick = ()=>{ closeSheet(); switchTab('reservas'); };
+}
+
+/* ================= STORAGE ================= */
+function getReservations(){
+  try{ return JSON.parse(localStorage.getItem('islaMesaReservas')||'[]'); }catch(e){ return []; }
+}
+function saveReservation(r){
+  const all = getReservations();
+  all.unshift(r);
+  localStorage.setItem('islaMesaReservas', JSON.stringify(all));
+  renderReservations();
+}
+function updateReservation(id, patch){
+  const all = getReservations().map(r=> r.id===id ? {...r,...patch} : r);
+  localStorage.setItem('islaMesaReservas', JSON.stringify(all));
+  renderReservations();
+}
+
+function formatDate(d){
+  const dt = new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'});
+}
+
+function renderReservations(){
+  const el = document.getElementById('resList');
+  const all = getReservations();
+  if(!all.length){
+    el.innerHTML = `<div class="empty">${emptySVG()}<h3>Aún no tienes reservas</h3><p>Explora los restaurantes y aparta tu mesa.</p></div>`;
+    return;
+  }
+  el.innerHTML = all.map(r=>`
+    <div class="res-card">
+      <div class="top">
+        <div>
+          <h4>${r.restaurantName}</h4>
+          <div class="when">${formatDate(r.date)} · ${r.time}</div>
+        </div>
+        <span class="status ${r.status}">${statusLabel(r.status)}</span>
+      </div>
+      <div class="details">
+        👥 ${r.guests} personas · 🙋 ${r.name}${r.priority?' · ⭐ Prioridad Pase Isla':''}${r.notes?`<br>📝 ${r.notes}`:''}
+      </div>
+      ${r.status!=='cancelada' ? `
+      <div class="res-actions">
+        ${r.restaurantPhone ? `<button class="wa" data-wa="${r.id}">Reenviar WhatsApp</button>` : ''}
+        ${r.status==='enviada' ? `<button data-confirm="${r.id}">Marcar confirmada</button>`:''}
+        <button class="cancel" data-cancel="${r.id}">Cancelar</button>
+      </div>`:''}
+    </div>
+  `).join('');
+
+  el.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>updateReservation(b.dataset.cancel,{status:'cancelada'}));
+  el.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>updateReservation(b.dataset.confirm,{status:'confirmada'}));
+  el.querySelectorAll('[data-wa]').forEach(b=>b.onclick=()=>{
+    const r = all.find(x=>x.id===b.dataset.wa);
+    const msg = `Hola ${r.restaurantName}! Confirmo mi reserva:%0A📅 ${r.date}%0A🕐 ${r.time}%0A👥 ${r.guests} personas%0A🙋 ${r.name}`;
+    window.open(`https://wa.me/${r.restaurantPhone}?text=${msg}`,'_blank');
+  });
+}
+function statusLabel(s){
+  return {enviada:'Enviada', confirmada:'Confirmada', cancelada:'Cancelada'}[s]||s;
+}
+
+/* ================= TABS & TOAST ================= */
+function switchTab(tab){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.getElementById('view-explorar').style.display = tab==='explorar' ? 'block':'none';
+  document.getElementById('view-mapa').style.display = tab==='mapa' ? 'block':'none';
+  document.getElementById('view-reservas').style.display = tab==='reservas' ? 'block':'none';
+  document.getElementById('mainContent').classList.toggle('nopad', tab==='mapa');
+  if(tab==='reservas') renderReservations();
+  if(tab==='mapa'){ initMap(); setTimeout(()=>leafletMapInstance && leafletMapInstance.invalidateSize(), 80); }
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ================= PASE ISLA (PREMIUM) =================
+   Sistema de código sin backend: el código válido cambia cada mes y se
+   calcula a partir de una palabra secreta. Cualquier dispositivo que cargue
+   esta misma app puede calcularlo (tanto el tuyo como el del cliente), así
+   que no requiere servidor. Es un candado sencillo pensado para un negocio
+   pequeño, no un sistema anti-fraude: alguien muy insistente con conocimientos
+   técnicos podría revisar el código fuente y calcularlo también. Para más
+   seguridad más adelante, lo ideal sería una pasarela de pago real.
+
+   Cómo obtienes el código para dárselo al cliente que ya pagó:
+   toca el logo (el escudo con la ola) 6 veces seguidas, y verás el código
+   vigente de este mes en una ventana emergente. */
+const PASE_ISLA_SECRETO = 'ISLAMESA-2026-SANANDRES'; // cámbiala si quieres invalidar códigos viejos
+
+function hashStr(str){
+  let h = 5381;
+  for(let i=0;i<str.length;i++){ h = ((h<<5)+h+str.charCodeAt(i))>>>0; }
+  return h;
+}
+function monthKey(offset){
+  const d = new Date();
+  d.setMonth(d.getMonth()+offset);
+  return d.getFullYear()+'-'+(d.getMonth()+1);
+}
+function codeForMonth(offset){
+  const h = hashStr(monthKey(offset)+PASE_ISLA_SECRETO);
+  const num = (h % 900000) + 100000; // siempre 6 dígitos
+  return 'ISLA'+num;
+}
+function isValidPremiumCode(code){
+  const c = (code||'').trim().toUpperCase().replace(/\s+/g,'');
+  return c === codeForMonth(0) || c === codeForMonth(-1); // acepta también el mes anterior (margen de gracia)
+}
+function isPremiumActive(){ return localStorage.getItem('islaMesaPremium') === '1'; }
+function activatePremiumCode(code){
+  if(isValidPremiumCode(code)){
+    localStorage.setItem('islaMesaPremium','1');
+    return true;
+  }
+  return false;
+}
+
+function getFavorites(){
+  try{ return JSON.parse(localStorage.getItem('islaMesaFavoritos')||'[]'); }catch(e){ return []; }
+}
+function isFavorite(id){ return getFavorites().includes(id); }
+function toggleFavorite(id){
+  let favs = getFavorites();
+  favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs, id];
+  localStorage.setItem('islaMesaFavoritos', JSON.stringify(favs));
+}
+
+function renderPremiumSlot(){
+  const el = document.getElementById('premiumSlot');
+  if(isPremiumActive()){
+    el.innerHTML = `<button class="premium-badge" id="premiumBtn">✨ Pase Isla</button>`;
+  } else {
+    el.innerHTML = `<button class="premium-btn" id="premiumBtn">🔓 Pase Isla</button>`;
+  }
+  document.getElementById('premiumBtn').onclick = ()=>openPremiumModal();
+}
+
+function openPremiumModal(pendingRestaurant){
+  const sheet = document.getElementById('sheet');
+  if(isPremiumActive()){
+    sheet.innerHTML = `
+      <button class="close-x" id="closeSheet">✕</button>
+      <div class="handle"></div>
+      <div class="content">
+        <div class="source-badge">✨ PASE ISLA ACTIVO</div>
+        <h2>Ya tienes tus beneficios</h2>
+        <div class="addr-box"><div class="txt"><b>🍽️ Reservas ilimitadas</b>Reserva mesa en cualquier restaurante de la app.</div></div>
+        <div class="addr-box"><div class="txt"><b>⭐ Favoritos</b>Guarda tus restaurantes preferidos y fíltralos con un toque.</div></div>
+        <div class="addr-box"><div class="txt"><b>🚀 Reserva prioritaria</b>Pide atención prioritaria al reservar mesa.</div></div>
+      </div>
+    `;
+  } else {
+    sheet.innerHTML = `
+      <button class="close-x" id="closeSheet">✕</button>
+      <div class="handle"></div>
+      <div class="content">
+        <div class="source-badge">🔓 PASE ISLA</div>
+        <h2>${pendingRestaurant ? 'Desbloquea tu reserva' : 'Desbloquea el Pase Isla'}</h2>
+        <p class="about">${pendingRestaurant ? `Para reservar en <b>${pendingRestaurant.name}</b> necesitas activar el Pase Isla.` : 'Con el Pase Isla puedes reservar mesa en cualquier restaurante de la isla.'} Además podrás guardar favoritos y pedir atención prioritaria.</p>
+        <div class="form-group">
+          <label>Código de activación</label>
+          <input type="text" id="premiumCodeInput" placeholder="Ej: ISLA123456" style="text-transform:uppercase;">
+        </div>
+        <button class="btn-primary" id="activatePremiumBtn">Activar</button>
+        <a class="btn-secondary" style="margin-top:10px;" href="https://wa.me/573016079064?text=Hola!%20Quiero%20mi%20c%C3%B3digo%20del%20Pase%20Isla" target="_blank" rel="noopener">💬 ¿No tienes código? Pídelo aquí</a>
+      </div>
+    `;
+  }
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('closeSheet').onclick = closeSheet;
+  const activateBtn = document.getElementById('activatePremiumBtn');
+  if(activateBtn){
+    activateBtn.onclick = ()=>{
+      const val = document.getElementById('premiumCodeInput').value;
+      if(activatePremiumCode(val)){
+        showToast('✅ Pase Isla activado, ¡disfrútalo!');
+        renderPremiumSlot();
+        renderFilters();
+        renderList();
+        if(pendingRestaurant) openReserveForm(pendingRestaurant);
+        else closeSheet();
+      } else {
+        showToast('Código inválido, verifícalo con quien te lo dio');
+      }
+    };
+  }
+}
+
+// Gesto secreto: toca el logo 6 veces seguidas para ver el código vigente
+let logoTapCount = 0, logoTapTimer;
+function handleLogoTap(){
+  logoTapCount++;
+  clearTimeout(logoTapTimer);
+  logoTapTimer = setTimeout(()=>{ logoTapCount = 0; }, 3000);
+  if(logoTapCount >= 6){
+    logoTapCount = 0;
+    alert('🔑 Código Pase Isla de este mes:\n\n' + codeForMonth(0) + '\n\nEntrégalo solo a quien ya haya pagado.');
+  }
+}
+document.getElementById('brandLogo').addEventListener('click', handleLogoTap);
+
+/* ================= INIT ================= */
+renderFilters();
+renderList();
+renderReservations();
+renderPremiumSlot();
+
+/* ================= PWA (offline install) ================= */
+const manifest = {
+  name:"Isla Mesa · Reservas San Andrés",
+  short_name:"Isla Mesa",
+  start_url:".", display:"standalone",
+  background_color:"#0a2438", theme_color:"#0a2438",
+  icons:[{src:"data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="%230f2e46"/><circle cx="24" cy="24" r="4" fill="%23ff7a5c"/></svg>'), sizes:"48x48", type:"image/svg+xml"}]
+};
+document.getElementById('manifestLink').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+document.getElementById('installBtn').onclick = async ()=>{
+  if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; }
+  document.getElementById('installBanner').classList.remove('show');
+};
+
+if('serviceWorker' in navigator){
+  const swCode = `
+    const CACHE='islamesa-v2';
+    self.addEventListener('install', e=>{ self.skipWaiting(); });
+    self.addEventListener('activate', e=>{ self.clients.claim(); });
+    self.addEventListener('fetch', e=>{
+      e.respondWith(
+        caches.open(CACHE).then(cache=>
+          cache.match(e.request).then(resp=> resp || fetch(e.request).then(r=>{ cache.put(e.request, r.clone()); return r; }).catch(()=>resp))
+        )
+      );
+    });
+  `;
+  const swUrl = URL.createObjectURL(new Blob([swCode],{type:'application/javascript'}));
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+</script>
+</body>
+</html>
